@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { ExternalLink, Trash2, Copy, FileText, Check, Edit2 } from 'lucide-react'
+import { ExternalLink, Trash2, Copy, FileText, Check, Edit2, Download } from 'lucide-react'
 import type { UploadedFile } from '@/lib/supabase'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
@@ -18,6 +18,7 @@ export function FilesList({ files, onFileDeleted, onFileRenamed }: FilesListProp
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
+  const [renamingId, setRenamingId] = useState<string | null>(null)
 
   const handleDelete = async (id: string) => {
     setDeletingId(id)
@@ -69,34 +70,94 @@ export function FilesList({ files, onFileDeleted, onFileRenamed }: FilesListProp
   }
 
   const handleRename = async (id: string, newName: string) => {
+    if (!newName.trim()) {
+      cancelEditing()
+      return
+    }
+
+    // Always add .html extension
+    const trimmedNewName = newName.trim()
+    const finalName = trimmedNewName.endsWith('.html') ? trimmedNewName : `${trimmedNewName}.html`
+
+    // Find the current file to compare names
+    const currentFile = files.find(f => f.id === id)
+    
+    // If name hasn't changed, just cancel editing
+    if (currentFile && currentFile.filename === finalName) {
+      cancelEditing()
+      return
+    }
+
+    setRenamingId(id)
+    
     try {
+      console.log('Renaming file:', id, 'from', currentFile?.filename, 'to', finalName)
+      
       const response = await fetch(`/api/files/${id}/rename`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: newName })
+        body: JSON.stringify({ filename: finalName })
       })
 
       if (!response.ok) {
-        throw new Error('Failed to rename file')
+        const errorData = await response.json()
+        console.error('Rename failed:', errorData)
+        throw new Error(errorData.error || 'Failed to rename file')
       }
 
+      const updatedFile = await response.json()
+      console.log('Rename successful, updated file:', updatedFile)
+
       setEditingId(null)
+      setEditingName('')
+      setRenamingId(null)
       onFileRenamed?.()
       toast.success('File renamed successfully')
     } catch (error) {
       console.error('Rename error:', error)
       toast.error('Failed to rename file')
+      setRenamingId(null)
+      // Reset editing state on error
+      cancelEditing()
     }
   }
 
   const startEditing = (id: string, currentName: string) => {
     setEditingId(id)
-    setEditingName(currentName)
+    // Remove .html extension for editing, we'll add it back
+    const nameWithoutExtension = currentName.replace(/\.html$/i, '')
+    setEditingName(nameWithoutExtension)
   }
 
   const cancelEditing = () => {
     setEditingId(null)
     setEditingName('')
+  }
+
+  const handleDownload = async (id: string, filename: string) => {
+    try {
+      const response = await fetch(`/view/${id}`)
+      if (!response.ok) {
+        throw new Error('Failed to download file')
+      }
+      
+      const htmlContent = await response.text()
+      const blob = new Blob([htmlContent], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      
+      toast.success('File downloaded successfully')
+    } catch (error) {
+      console.error('Download error:', error)
+      toast.error('Failed to download file')
+    }
   }
 
   if (files.length === 0) {
@@ -157,6 +218,11 @@ export function FilesList({ files, onFileDeleted, onFileRenamed }: FilesListProp
                             autoFocus
                           />
                         </div>
+                      ) : renamingId === file.id ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-5 bg-slate-200 rounded animate-pulse" style={{ width: '200px' }}></div>
+                          <div className="h-4 w-4 bg-slate-200 rounded animate-pulse"></div>
+                        </div>
                       ) : (
                         <div className="flex items-center gap-2">
                           <h4 className="font-medium text-slate-900 truncate">{file.filename}</h4>
@@ -209,6 +275,14 @@ export function FilesList({ files, onFileDeleted, onFileRenamed }: FilesListProp
                   >
                     <ExternalLink className="h-4 w-4 mr-1" />
                     View
+                  </Button>
+                  
+                  <Button
+                    onClick={() => handleDownload(file.id, file.filename)}
+                    className="h-9 px-3 text-sm bg-green-500 hover:bg-green-600 text-white transition-colors"
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    Download
                   </Button>
                   
                   <Button

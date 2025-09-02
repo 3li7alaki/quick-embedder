@@ -22,18 +22,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File too large. Max size is 5MB' }, { status: 400 })
     }
 
-    // Generate unique filename
+    // Generate unique filename (just use the ID for storage)
     const fileId = uuidv4()
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const fileName = `${fileId}_${sanitizedName}`
-    const filePath = `html-files/${fileName}`
+    const filePath = `${fileId}.html`
 
     // Convert file to buffer
     const buffer = await file.arrayBuffer()
     const fileBuffer = new Uint8Array(buffer)
 
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('html-files')
       .upload(filePath, fileBuffer, {
         contentType: 'text/html',
@@ -46,11 +44,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Save metadata to database
-    const { data: dbData, error: dbError } = await supabase
+    const { error: dbError } = await supabase
       .from('uploaded_files')
       .insert({
         id: fileId,
-        filename: sanitizedName,
+        filename: file.name,
         file_path: filePath,
         file_size: file.size
       })
@@ -66,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       id: fileId,
-      filename: sanitizedName,
+      filename: file.name,
       viewUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/view/${fileId}`,
       size: file.size
     })

@@ -9,14 +9,14 @@ export async function PUT(
     const { id } = await params
     const { filename } = await request.json()
 
-    if (!filename || typeof filename !== 'string') {
+    if (!filename || typeof filename !== 'string' || !filename.trim()) {
       return NextResponse.json({ error: 'Filename is required' }, { status: 400 })
     }
 
     // Update filename in database
     const { data, error } = await supabase
       .from('uploaded_files')
-      .update({ filename })
+      .update({ filename: filename.trim() })
       .eq('id', id)
       .select()
 
