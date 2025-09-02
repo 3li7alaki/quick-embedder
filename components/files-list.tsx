@@ -16,6 +16,7 @@ interface FilesListProps {
 export function FilesList({ files, onFileDeleted, onFileRenamed }: FilesListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [copiedEmbedId, setCopiedEmbedId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
   const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -41,11 +42,16 @@ export function FilesList({ files, onFileDeleted, onFileRenamed }: FilesListProp
     }
   }
 
-  const copyToClipboard = async (url: string, id: string) => {
+  const copyToClipboard = async (url: string, id: string, isEmbed = false) => {
     try {
       await navigator.clipboard.writeText(url)
-      setCopiedId(id)
-      setTimeout(() => setCopiedId(null), 2000)
+      if (isEmbed) {
+        setCopiedEmbedId(id)
+        setTimeout(() => setCopiedEmbedId(null), 2000)
+      } else {
+        setCopiedId(id)
+        setTimeout(() => setCopiedId(null), 2000)
+      }
       toast.success('Link copied to clipboard!')
     } catch (error) {
       console.error('Copy error:', error)
@@ -241,34 +247,47 @@ export function FilesList({ files, onFileDeleted, onFileRenamed }: FilesListProp
                       </div>
                     </div>
                   </div>
-                  <div className="mt-3 p-3 bg-slate-50 rounded-lg border">
-                    <p className="text-xs text-slate-600 mb-2">Embeddable URL:</p>
-                    <code className="text-xs font-mono text-slate-800 break-all">{viewUrl}</code>
+                  <div className="mt-3 space-y-2">
+                    <div className="p-3 bg-slate-50 rounded-lg border">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="text-xs text-slate-600 mb-1">View URL (for sharing):</p>
+                          <code className="text-xs font-mono text-slate-800 break-all">{viewUrl}</code>
+                        </div>
+                        <Button
+                          onClick={() => copyToClipboard(viewUrl, file.id)}
+                          className={`h-6 px-2 ml-2 text-xs ${
+                            copiedId === file.id 
+                              ? 'bg-green-500 hover:bg-green-600 text-white' 
+                              : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                          } transition-colors`}
+                        >
+                          {copiedId === file.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="text-xs text-green-700 mb-1">Embed URL (for Pitch.com & iframes):</p>
+                          <code className="text-xs font-mono text-green-800 break-all">{`${window.location.origin}/embed/${file.id}`}</code>
+                        </div>
+                        <Button
+                          onClick={() => copyToClipboard(`${window.location.origin}/embed/${file.id}`, file.id, true)}
+                          className={`h-6 px-2 ml-2 text-xs ${
+                            copiedEmbedId === file.id 
+                              ? 'bg-green-500 hover:bg-green-600 text-white' 
+                              : 'bg-green-200 hover:bg-green-300 text-green-700'
+                          } transition-colors`}
+                        >
+                          {copiedEmbedId === file.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-2 ml-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    onClick={() => copyToClipboard(viewUrl, file.id)}
-                    className={`h-9 px-3 text-sm ${
-                      copiedId === file.id 
-                        ? 'bg-green-500 hover:bg-green-600 text-white' 
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                    } transition-colors`}
-                  >
-                    {copiedId === file.id ? (
-                      <>
-                        <Check className="h-4 w-4 mr-1" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4 mr-1" />
-                        Copy
-                      </>
-                    )}
-                  </Button>
-                  
                   <Button
                     onClick={() => window.open(viewUrl, '_blank')}
                     className="h-9 px-3 text-sm bg-blue-500 hover:bg-blue-600 text-white transition-colors"

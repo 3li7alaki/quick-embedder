@@ -49,6 +49,7 @@ export default async function ViewPage({ params }: ViewPageProps) {
 // Generate metadata for better embedding
 export async function generateMetadata({ params }: ViewPageProps) {
   const { id } = await params
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
   try {
     const { data: fileData } = await supabase
@@ -57,9 +58,27 @@ export async function generateMetadata({ params }: ViewPageProps) {
       .eq('id', id)
       .single()
 
+    const title = fileData?.filename || 'Quick Embedder'
+    const viewUrl = `${baseUrl}/view/${id}`
+
     return {
-      title: fileData?.filename || 'Quick Embedder',
-      robots: 'noindex, nofollow'
+      title,
+      description: `View ${title} - Quick Embedder`,
+      openGraph: {
+        title,
+        description: `Interactive preview of ${title}`,
+        url: viewUrl,
+        type: 'website',
+        siteName: 'Quick Embedder'
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description: `Interactive preview of ${title}`
+      },
+      other: {
+        'X-Frame-Options': 'ALLOWALL'
+      }
     }
   } catch {
     return {
