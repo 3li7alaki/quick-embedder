@@ -76,6 +76,13 @@ export async function generateMetadata({ params }: ViewPageProps) {
         title,
         description: `Interactive preview of ${title}`
       },
+      alternates: {
+        canonical: viewUrl,
+        types: {
+          'application/json+oembed': `${baseUrl}/api/oembed?url=${encodeURIComponent(viewUrl)}&format=json`,
+          'text/xml+oembed': `${baseUrl}/api/oembed?url=${encodeURIComponent(viewUrl)}&format=xml`
+        }
+      },
       other: {
         'X-Frame-Options': 'ALLOWALL'
       }
