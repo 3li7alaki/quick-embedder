@@ -69,12 +69,32 @@ export async function generateMetadata({ params }: ViewPageProps) {
         description: `Interactive preview of ${title}`,
         url: viewUrl,
         type: 'website',
-        siteName: 'Quick Embedder'
+        siteName: 'Quick Embedder',
+        videos: [
+          {
+            url: `${baseUrl}/embed/${id}`,
+            secureUrl: `${baseUrl}/embed/${id}`,
+            type: 'text/html',
+            width: 800,
+            height: 600
+          }
+        ]
       },
       twitter: {
-        card: 'summary_large_image',
+        card: 'player',
         title,
-        description: `Interactive preview of ${title}`
+        description: `Interactive preview of ${title}`,
+        players: [
+          {
+            playerUrl: `${baseUrl}/embed/${id}`,
+            streamUrl: `${baseUrl}/embed/${id}`,
+            width: 800,
+            height: 600
+          }
+        ],
+        player: `${baseUrl}/embed/${id}`,
+        playerWidth: 800,
+        playerHeight: 600
       },
       alternates: {
         canonical: viewUrl,

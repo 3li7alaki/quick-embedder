@@ -70,7 +70,6 @@ export async function GET(request: NextRequest) {
     const height = Math.min(parseInt(maxheight), 800)
     
     const oembedData = {
-      success: true,
       version: '1.0',
       type: 'rich',
       provider_name: 'Quick Embedder',
@@ -81,7 +80,10 @@ export async function GET(request: NextRequest) {
       author_url: baseUrl,
       width: width,
       height: height,
-      html: `<iframe src="${embedUrl}" width="${width}" height="${height}" frameborder="0" allowfullscreen="true" loading="lazy" style="width: 100%; max-width: ${width}px; border: 1px solid #e5e7eb; border-radius: 8px;"></iframe>`
+      html: `<iframe src="${embedUrl}" width="${width}" height="${height}" frameborder="0" allowfullscreen="true" loading="lazy" style="width: 100%; max-width: ${width}px; aspect-ratio: 16/9; border: 1px solid #e5e7eb; border-radius: 8px;"></iframe>`,
+      thumbnail_url: `${baseUrl}/api/og?title=${encodeURIComponent(fileData.filename)}`,
+      thumbnail_width: 1200,
+      thumbnail_height: 630
     }
 
     if (format === 'xml') {
