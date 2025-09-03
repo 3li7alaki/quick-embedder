@@ -62,26 +62,43 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Use /embed/ URL for iframe src
+    // Build embed URL for professional HTML page preview
     const embedUrl = `${baseUrl}/embed/${id}`
     
-    // Calculate responsive dimensions
-    const width = Math.min(parseInt(maxwidth), 1200)
-    const height = Math.min(parseInt(maxheight), 800)
+    // Professional dimensions optimized for full HTML page viewing
+    // Default to desktop-friendly dimensions with 16:10 aspect ratio
+    const requestedWidth = parseInt(maxwidth) || 1280
+    const requestedHeight = parseInt(maxheight) || 800
     
+    // Apply reasonable limits while maintaining good viewing experience
+    const width = Math.min(requestedWidth, 1920)
+    const height = Math.min(requestedHeight, 1200)
+    
+    // Professional oEmbed response optimized for HTML document previews
     const oembedData = {
       version: '1.0',
       type: 'rich',
       provider_name: 'Quick Embedder',
       provider_url: baseUrl,
-      cache_age: 3600,
-      title: fileData.filename,
+      cache_age: 86400, // 24 hour cache for better performance
+      title: fileData.filename || 'HTML Document',
       author_name: 'Quick Embedder',
       author_url: baseUrl,
       width: width,
       height: height,
-      html: `<iframe src="${embedUrl}" width="${width}" height="${height}" frameborder="0" allowfullscreen="true" loading="lazy" style="width: 100%; max-width: ${width}px; aspect-ratio: 16/9; border: 1px solid #e5e7eb; border-radius: 8px;"></iframe>`,
-      thumbnail_url: `${baseUrl}/api/og?title=${encodeURIComponent(fileData.filename)}`,
+      html: `<iframe 
+        src="${embedUrl}" 
+        width="${width}" 
+        height="${height}" 
+        frameborder="0" 
+        allowfullscreen="true" 
+        loading="lazy" 
+        sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-downloads" 
+        scrolling="yes" 
+        style="width: 100%; height: ${height}px; max-width: ${width}px; min-height: 400px; border: none; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06); border-radius: 8px; background: #ffffff;" 
+        title="${fileData.filename?.replace(/"/g, '&quot;') || 'HTML Preview'}">
+      </iframe>`,
+      thumbnail_url: `${baseUrl}/api/og?id=${id}`,
       thumbnail_width: 1200,
       thumbnail_height: 630
     }
@@ -94,9 +111,15 @@ export async function GET(request: NextRequest) {
   <provider_name>${oembedData.provider_name}</provider_name>
   <provider_url>${oembedData.provider_url}</provider_url>
   <title>${oembedData.title}</title>
+  <author_name>${oembedData.author_name}</author_name>
+  <author_url>${oembedData.author_url}</author_url>
+  <cache_age>${oembedData.cache_age}</cache_age>
   <html><![CDATA[${oembedData.html}]]></html>
   <width>${oembedData.width}</width>
   <height>${oembedData.height}</height>
+  <thumbnail_url>${oembedData.thumbnail_url}</thumbnail_url>
+  <thumbnail_width>${oembedData.thumbnail_width}</thumbnail_width>
+  <thumbnail_height>${oembedData.thumbnail_height}</thumbnail_height>
 </oembed>`
       
       return new NextResponse(xml, {

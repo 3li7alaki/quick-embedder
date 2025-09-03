@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
+import Script from 'next/script'
 
 interface ViewPageProps {
   params: Promise<{ id: string }>
@@ -31,13 +32,29 @@ export default async function ViewPage({ params }: ViewPageProps) {
 
     // Convert blob to text
     const htmlContent = await fileContent.text()
+    
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const embedUrl = `${baseUrl}/embed/${id}`
 
-    // Return the HTML content directly
+    // Return the HTML content directly with discovery links
     return (
-      <div 
-        dangerouslySetInnerHTML={{ __html: htmlContent }}
-        style={{ width: '100%', height: '100vh' }}
-      />
+      <>
+        <Script id="iframely-discovery" strategy="beforeInteractive">
+          {`
+            // Add Iframely discovery link
+            var iframelyLink = document.createElement('link');
+            iframelyLink.rel = 'iframely';
+            iframelyLink.type = 'text/html';
+            iframelyLink.href = '${embedUrl}';
+            iframelyLink.media = 'aspect-ratio: 16/10; max-width: 1280';
+            document.head.appendChild(iframelyLink);
+          `}
+        </Script>
+        <div 
+          dangerouslySetInnerHTML={{ __html: htmlContent }}
+          style={{ width: '100%', height: '100vh' }}
+        />
+      </>
     )
 
   } catch (error) {
@@ -104,6 +121,10 @@ export async function generateMetadata({ params }: ViewPageProps) {
         }
       },
       other: {
+        'iframely:href': `${baseUrl}/embed/${id}`,
+        'iframely:media': 'aspect-ratio: 16/10; max-width: 1280',
+        'iframely:rel': 'iframely app',
+        'iframely:type': 'text/html',
         'X-Frame-Options': 'ALLOWALL'
       }
     }
