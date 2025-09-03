@@ -63,7 +63,10 @@ export async function GET(
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
         'X-Frame-Options': 'ALLOWALL',
-        'Content-Security-Policy': 'frame-ancestors *;'
+        'Content-Security-Policy': 'frame-ancestors *;',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Cache-Control': 'public, max-age=3600'
       }
     })
 

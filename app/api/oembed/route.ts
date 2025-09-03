@@ -5,6 +5,8 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const url = searchParams.get('url')
   const format = searchParams.get('format') || 'json'
+  const maxwidth = searchParams.get('maxwidth') || '800'
+  const maxheight = searchParams.get('maxheight') || '600'
 
   if (!url) {
     return NextResponse.json(
@@ -14,6 +16,7 @@ export async function GET(request: NextRequest) {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET',
+          'Cache-Control': 'no-cache',
         }
       }
     )
@@ -29,6 +32,7 @@ export async function GET(request: NextRequest) {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET',
+          'Cache-Control': 'no-cache',
         }
       }
     )
@@ -61,18 +65,23 @@ export async function GET(request: NextRequest) {
     // Use /embed/ URL for iframe src
     const embedUrl = `${baseUrl}/embed/${id}`
     
+    // Calculate responsive dimensions
+    const width = Math.min(parseInt(maxwidth), 1200)
+    const height = Math.min(parseInt(maxheight), 800)
+    
     const oembedData = {
       success: true,
       version: '1.0',
       type: 'rich',
       provider_name: 'Quick Embedder',
       provider_url: baseUrl,
+      cache_age: 3600,
       title: fileData.filename,
-      author_name: 'Quick Embedder User',
+      author_name: 'Quick Embedder',
       author_url: baseUrl,
-      width: '800',
-      height: '600',
-      html: `<iframe src="${embedUrl}" width="800" height="600" frameborder="0" allowfullscreen style="width: 100%;"></iframe>`
+      width: width,
+      height: height,
+      html: `<iframe src="${embedUrl}" width="${width}" height="${height}" frameborder="0" allowfullscreen="true" loading="lazy" style="width: 100%; max-width: ${width}px; border: 1px solid #e5e7eb; border-radius: 8px;"></iframe>`
     }
 
     if (format === 'xml') {
@@ -102,6 +111,7 @@ export async function GET(request: NextRequest) {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET',
+        'Cache-Control': 'public, max-age=3600',
       }
     })
   } catch (error) {
